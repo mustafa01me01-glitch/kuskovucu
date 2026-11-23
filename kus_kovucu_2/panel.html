@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="tr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kuş Kovucu Paneli</title>
+<style>
+:root{--bg:#f3efe7;--k:#fffdf8;--tx:#2b2620;--mt:#6f675b;--ac:#2f6f9f;--ok:#2e8b57;--cr:#c8382e;--ln:#d9d1c2;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1b1814;--k:#26221c;--tx:#efe9dd;--mt:#a99f8d;--ln:#3d372d;color-scheme:dark}}
+body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--tx);margin:0 auto;padding:16px;max-width:480px}
+h1{font-size:20px;margin:0 0 12px}
+.k{background:var(--k);border-radius:12px;padding:14px;margin-bottom:12px}
+.b{font-size:32px;font-weight:bold}.s{color:var(--mt);font-size:13px}
+input{width:100%;box-sizing:border-box;padding:10px;font-size:16px;border-radius:8px;border:1px solid var(--ln);background:transparent;color:var(--tx);margin-top:6px}
+button{width:100%;padding:14px;font-size:16px;border:0;border-radius:10px;background:var(--ac);color:#fff;margin-top:8px}
+#d{display:inline-block;padding:4px 12px;border-radius:99px;font-weight:bold;color:#fff;background:var(--cr)}
+#v{width:100%;border-radius:8px;background:#000;display:none;margin-top:8px;min-height:120px}
+#vm{color:var(--mt);font-size:13px;margin-top:6px}
+</style></head><body>
+<h1>Kuş Kovucu Paneli</h1>
+<div class="k"><span id="d">BAĞLANTI YOK</span></div>
+<div class="k"><div class="s">ESP32 adresi</div><input id="ip" value="192.168.4.1" inputmode="decimal"></div>
+<div class="k"><div class="s">Nem</div><div class="b" id="h">-</div></div>
+<div class="k"><div class="s">Sıcaklık</div><div class="b" id="t">-</div></div>
+<div class="k"><div class="s">Kuş algılama</div><div class="b" id="n">-</div></div>
+<button onclick="test()">Servoyu Test Et</button>
+
+<div class="k" style="margin-top:12px"><div class="s">Kamera adresi (ESP32-CAM)</div>
+<input id="cip" placeholder="192.168.1.xx" inputmode="decimal">
+<img id="v" alt="Kamera">
+<div id="vm">Kamera kapalı</div>
+<button id="kb" onclick="kam()">Kamerayı Aç</button></div>
+
+<script>
+var $=function(i){return document.getElementById(i)},acik=false;
+function adres(){return 'http://'+$('ip').value.trim()}
+function durum(ok){$('d').innerText=ok?'BAĞLI':'BAĞLANTI YOK';$('d').style.background=ok?'var(--ok)':'var(--cr)'}
+function g(){
+ var c=new AbortController(),tm=setTimeout(function(){c.abort()},1800);
+ fetch(adres()+'/data',{signal:c.signal}).then(function(r){return r.json()}).then(function(v){
+  clearTimeout(tm);durum(true);
+  $('h').innerText='%'+v.h;$('t').innerText=v.t+' °C';$('n').innerText=v.n;
+ }).catch(function(){durum(false)});
+}
+function test(){fetch(adres()+'/test').catch(function(){})}
+function kam(){
+ var v=$('v');
+ if(acik){acik=false;v.src='';v.style.display='none';$('vm').innerText='Kamera kapalı';$('kb').innerText='Kamerayı Aç';return}
+ var ip=$('cip').value.trim();if(!ip){$('vm').innerText='Önce kamera adresini yazın';return}
+ acik=true;v.style.display='block';$('vm').innerText='Bağlanıyor...';$('kb').innerText='Kamerayı Kapat';
+ v.onload=function(){$('vm').innerText='Canlı görüntü'};
+ v.onerror=function(){acik=false;v.style.display='none';$('vm').innerText='Kameraya bağlanılamadı';$('kb').innerText='Kamerayı Aç'};
+ v.src='http://'+ip+'/stream?t='+Date.now();
+}
+setInterval(g,2000);g();
+</script></body></html>
